@@ -3,6 +3,7 @@ const cors = require('cors');
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const User = require("./models/user.model")
+const Note = require("./models/note.model")
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
@@ -121,6 +122,48 @@ app.post('/login', async (req, res) => {
         .json({
             error: true,
             message: "Invalid Credentials",
+        })
+    }
+})
+
+// Add Note
+app.post("/add-note", authenticateToken, async (req, res) => {
+    const { title, content, tags } = req.body;
+    const { user } = req.user;
+
+    if(!title) {
+        return res 
+        .status(400)
+        .json({ error: true, message: "Title is required" });
+    }
+
+    if(!content) {
+        return res 
+        .status(400)
+        .json({ error: true, message: "Content is required" });
+    }
+
+    try {
+        const note = new Note({
+            title,
+            content,
+            tags: tags || {},
+            userId: user._id,
+        })
+        await note.save();
+        
+        return res.json({
+            error: false,
+            note,
+            message: "Note added Successfully",
+        })
+    }
+    catch (error) {
+        return res
+        .status(400)
+        .json({
+            error: true,
+            message: "Internal Server error",
         })
     }
 })
